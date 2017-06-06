@@ -1,0 +1,41 @@
+topic: ~Faq()
+language: enu
+
+# Defining extra concepts out of words or group of words
+#concept:(hello) [hello hi hey "good morning" greetings]
+
+# Catching inputs and triggering outputs
+#u:(e:onStart) $onStopped=1
+
+# Replying to speech
+#u:(~hello) ~hello
+
+
+concept:(faqGreeting) I need you to briefly describe your transaction that you want to do? Would you like to start?
+concept:(faqHumanThink) ^rand["Are you there?" "don't be shy" "Do you still need time to think"]
+concept:(faqRobotThink) ^rand["Let me think for a while" "I am trying to remmember"]
+concept:(faqBye) ^rand["OK may be next time" "see you later"] 
+concept:(faqStartProposal) Could you briefly describe your transaction that you want to do?
+
+u:(e:onStart) $Faq/Start=1
+u:(test) Success
+u1:(_*)  you said $1 $Faq/AnswerTest=$1
+
+u:(e:Faq/Start) ^goto(faqStart) #it helps to start conversation on start but it may be removed after service development complete
+#u:(e:Faq/Replied) ^goto(faqReplied)
+
+proposal:%faqStart ~faqStartProposal ^stayInScope
+u:(_*)  ~faqRobotThink $Faq/StartSpeak=$1 
+u1:(e:Dialog/NoOneSpeak10) ~faqHumanThink ^stayInScope
+u2:(yes) OK ^stayInScope
+u2:(no) ~faqBye
+
+#proposal:%faqReplied I found same information for you. You can check my tablet. Whould you like to me send the link to your mobile bank ^stayInScope
+#u:(yes) OK thats greate! I send you the link $Faq/LinkSend=1
+#u:(no) OK another time
+
+
+
+
+
+#bu noktada kollarini kapatip dusunen ve kafasini hafif sallayan bi animasyon yapilabilir. :) 
