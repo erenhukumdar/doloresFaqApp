@@ -1,52 +1,49 @@
-session.subscribeToEvent("Faq/StartSpeak", function(value) {
+session.subscribeToEvent("Faq/StartSpeak", function (value) {
     console.log("Event raised!")
-    startSpeak();
+    startSpeak(value);
 });
-session.subscribeToEvent("Faq/ResponseArrived", function(value) {
+session.subscribeToEvent("Faq/Replied", function (value) {
+    console.log("Event raised!")
+    showResponse(value);
+});
+session.subscribeToEvent("Faq/StartSurvey", function (value) {
+    console.log("Event raised!")
+    showSurvey(value);
+});
+session.subscribeToEvent("Faq/Replied", function (value) {
     console.log("Event raised!")
     showResponse(value);
 });
 
-function startSpeak() {
+function startSpeak(value) {
 
-          console.log('event raised');
-              // Run the countdown
-          $('.timer').circularCountDown({
-              delayToFadeIn: 500,
-			  size: 350,
-			  fontColor: '#fff',
-			  colorCircle: 'white',
-			  background: '#3d62c6',
-              reverseLoading: false,
-              duration: {
-                  seconds: parseInt(10)
-              },
-              beforeStart: function() {
-                  $('.launcher').hide();
-              },
-              end: function(countdown) {
-                  countdown.destroy();
-                  $('.launcher').show();
-                  //session.raiseEvent("Faq/")
-              }
-          });
-}
-function startRecord() {
-
-    session.raiseEvent("Faq/StartRecord",1);
-    document.getElementById("testText").innerText="clicked";
-
+    console.log('event raised');
+    document.getElementById("question").innerText = value;
 }
 
 
-function stopRecord() {
 
-    session.raiseEvent("Faq/StopRecord",1);
-    document.getElementById("testText").innerText="released";
+function showResponse(value) {
+    document.getElementById("answer").innerText = value;
 
 }
-function showResponse(response)
+function sendResult(value) {
+
+   if(value==1)
+   {
+       session.raiseEvent("Faq/SurveyYes", value);
+   }
+   else
+   {
+       session.raiseEvent("Faq/SurveyNo", value);
+   }
+}
+
+function showSurvey(value)
 {
-        document.getElementById("responseText").innerText=response;
+
+document.getElementById("survey").style.display = 'block';
+document.getElementById("faq").style.display='none';
 
 }
+

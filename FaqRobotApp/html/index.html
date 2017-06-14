@@ -1,39 +1,33 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>jQuery CircularCountDownJs Plugin Demo</title>
-<!--<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">-->
-<link href="http://www.jqueryscript.net/css/jquerysctipttop.css" rel="stylesheet" type="text/css">
-<style>
-body { background-color:#333;}
-.container { margin:auto; width: 30%; text-align: center}
-h1 { color:#fff;}
-
-</style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
 
-<div class="jquery-script-clear"></div>
+<div id="faq" style=" width: 1280px; height: 800px; ">
+    <div style="vertical-align: top"><label id="question" style="font-size: 16px; color:red"></label></div>
+    <image src="images/questionmark.png" style="width: 300px;height: 300px; position: absolute; margin: auto;  top: 0; bottom:0; left: 0; right:0;"> </image>
+    <div style="vertical-align: bottom"><label id="answer" style="font-size: 16px; color:red"></label></div>
 </div>
 
-<div class="container" >
-<h1>Pepper FAQ Demo</h1>
- <!--<button id="record"  onmousedown="startRecord()" onmouseup="stopRecord()" style="width: 100px; height: 100px; ">Record</button>-->
- <input type="image" src="images/microphone.png" onmousedown="startRecord()" onmouseup="stopRecord()" style="width: 40px;height: 40px;"/>
- <label id="testText" >ben burdayim</label>
- <label id="responseText" style="font-size: 20px; color:red;"></label>
-<div class="timer" style="text-align: center"></div>
-</div>
+
+    <div id="survey" style="width: 610px; height: 300px;
+    white-space: nowrap; float:left; overflow: hidden;position: absolute; margin: auto;  top: 0; bottom:0; left: 0; right:0; display: none; " >
+
+
+
+            <input id="btnLike" type="image" src="images/like.jpg" alt="Submit" width="300" height="300" onclick="sendResult(1)" style="outline: none">
+        <input id="btnDislike" type="image" src="images/dislike.jpg" alt="Submit" width="300px" height="300px" onclick="sendResult(0)" style="outline: none">
+
+    </div>
 
 <script src="http://code.jquery.com/jquery-1.12.1.min.js"></script>
-<script src="circular-countdown.js"></script>
- <script src="qimessaging_helper.js"></script>
+<script src="qimessaging_helper.js"></script>
 <script src="main.js"></script>
-
 
 
 </body>

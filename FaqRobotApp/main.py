@@ -6,8 +6,7 @@ import os
 import requests
 from wit import Wit
 from requests.auth import HTTPBasicAuth
-import uuid
-import time
+
 
 
 class FaqApp(object):
@@ -74,6 +73,7 @@ class FaqApp(object):
             self.sm_basic_username=self.preferences.getValue('faq', 'sm_basic_user_name')
             self.sm_basic_pass = self.preferences.getValue('faq', 'sm_basic_pass')
             self.record_duration = self.preferences.getValue('faq', 'record_duration')
+            self.surveyUrl = self.preferences.getValue('faq', 'survey_url')
         except Exception, e:
             self.logger.info("failed to get preferences".format(e))
         self.logger.info("Successfully connected to preferences system")
@@ -84,25 +84,23 @@ class FaqApp(object):
         # When you can, prefer qi.Signals instead of ALMemory events
         memory = self.session.service("ALMemory")
 
-        event_name = "Faq/StartRecord"
+        event_name = "Faq/StartSpeak"
         memory.declareEvent(event_name)
         event_subscriber = memory.subscriber(event_name)
-        event_connection = event_subscriber.signal.connect(self.start_record)
+        event_connection = event_subscriber.signal.connect(self.on_speech_faq_input)
         # event_connection = event_subscriber.signal.connect(self.on_speech_faq_input)
         self.subscriber_list.append([event_subscriber, event_connection])
-
-        event_name = "Faq/StopRecord"
-        memory.declareEvent(event_name)
-        event_subscriber = memory.subscriber(event_name)
-        event_connection = event_subscriber.signal.connect(self.stop_record)
-        # event_connection = event_subscriber.signal.connect(self.on_speech_faq_input)
-        self.subscriber_list.append([event_subscriber, event_connection])
-
 
         event_name = "Faq/LinkSend"
         memory.declareEvent(event_name)
         event_subscriber = memory.subscriber(event_name)
         event_connection = event_subscriber.signal.connect(self.on_magiclink_wanted)
+        self.subscriber_list.append([event_subscriber, event_connection])
+
+        event_name = "Faq/SurveyStart"
+        memory.declareEvent(event_name)
+        event_subscriber = memory.subscriber(event_name)
+        event_connection = event_subscriber.signal.connect(self.on_survey_start)
         self.subscriber_list.append([event_subscriber, event_connection])
 
         self.logger.info("Event created!")
@@ -172,23 +170,30 @@ class FaqApp(object):
     def on_speech_faq_input(self, value):
         if value:
             self.logger.info("Get the input by event: {}".format(value))
-            link = self.send_question_to_smartmoderation(value)
-            self.show_sm_link_on_tablet(link)
+            answer = self.send_question_to_smartmoderation(value)
+            memory = self.session.service("ALMemory")
+            memory.raiseEvent("Faq/Replied", answer)
+            memory.insertData("ML", "http://www.isbank.com.tr/TR/kobi/dis-ticaret/dis-ticaret-urunleri/doviz-havalesi/Sayfalar/doviz-havalesi.aspx")
+            # dialog = self.session.service("ALDialog")
+            # dialog.activateTag("faqReplied", "Faq")
+            # dialog.gotoTag("faqReplied", "Faq")
+            # self.show_sm_link_on_tablet(link)
 
     @qi.bind(methodName="onExit", returnType=qi.Void)
     def on_exit(self, value):
         self.stop_app()
 
-    @qi.nobind
+    @qi.bind(methodName="test", paramsType=(qi.String, ), returnType=qi.String)
     def send_question_to_smartmoderation(self,value):
         self.logger.info('Transfer started..')
         try:
-            response = requests.get(self.sm_url, auth=HTTPBasicAuth(self.sm_basic_username, self.sm_basic_pass))
+            payload = {'question': value}
+            response = requests.get(self.sm_url, params=payload, auth=HTTPBasicAuth(self.sm_basic_username, self.sm_basic_pass))
             self.logger.info(response.text)
-            data=response.json()
+            return response.text
         except Exception, e:
             self.logger.info('Error while requesting result: {}'.format(e))
-        return data['link']
+            return "oppss something happened"
 
     @qi.bind(methodName="onMagicLinkWanted", paramsType=(), returnType=qi.Void)
     def on_magiclink_wanted(self):
@@ -202,46 +207,9 @@ class FaqApp(object):
         self.ts.loadUrl(link)
 
     @qi.nobind
-    def send(request, response):
-        print(response['text'])
-
-    @qi.bind(methodName="startRecord", paramsType=(qi.String, ), returnType=qi.Void)
-    def start_record(self,val):
-        ba_service = self.session.service("ALBasicAwareness")
-        motion_service = self.session.service("ALMotion")
-        ba_service.setEnabled(False)
-        # folder_path='/home/nao/recordings/audio/'
-        # file_name=str(uuid.uuid4().hex)+'.ogg'
-        # audioName=folder_path+file_name
-        self.logger.info("Audio record has been started file path:".format(self.audioFilePath))
-        self.audio.startMicrophonesRecording(self.audioFilePath)
-
-    @qi.bind(methodName="stopRecord", paramsType=(qi.String,), returnType=qi.Void)
-    def stop_record(self,val):
-        actions = {
-            'send': self.send,
-        }
-        try:
-            self.audio.stopMicrophonesRecording()
-            with open(self.audioFilePath, 'rb') as f:
-                client = Wit(access_token="XPNLWXIPXA5ZYLTYCV7JELX6JZKPRQAL", actions=actions)
-                resp = client.speech(f, None, {'Content-Type': 'audio/wav'})
-            self.logger.info('Yay, got Wit.ai response: ' + str(resp))
-            memory = self.session.service("ALMemory")
-            memory.raiseEvent('Faq/ResponseArrived', resp["_text"])
-        except Exception, e:
-            self.logger.info("audio error".format(e))
-
-
-
-        return str(resp)
-
-
-
-
-
-
-
+    def on_survey_start(self, link):
+        self.logger.info("survey has been started")
+        # self.ts.loadUrl(self.surveyUrl)
 if __name__ == "__main__":
     # with this you can run the script for tests on remote robots
     # run : python main.py --qi-url 123.123.123.123

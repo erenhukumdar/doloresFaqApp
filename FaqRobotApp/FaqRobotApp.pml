@@ -15,9 +15,11 @@
         <File name="__init__" src="wit/__init__.pyc" />
         <File name="wit" src="wit/wit.py" />
         <File name="wit" src="wit/wit.pyc" />
-        <File name="circular-countdown" src="html/circular-countdown.js" />
         <File name="qimessaging_helper" src="html/qimessaging_helper.js" />
-        <File name="microphone" src="html/images/microphone.png" />
+        <File name="questionmark" src="html/images/questionmark.png" />
+        <File name="survey" src="html/survey.html" />
+        <File name="dislike" src="html/images/dislike.jpg" />
+        <File name="like" src="html/images/like.jpg" />
     </Resources>
     <Topics>
         <Topic name="Faq_enu" src="Faq/Faq_enu.top" topicName="Faq" language="en_US" />

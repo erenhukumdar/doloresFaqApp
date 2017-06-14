@@ -13,29 +13,52 @@ language: enu
 
 concept:(faqGreeting) I need you to briefly describe your transaction that you want to do? Would you like to start?
 concept:(faqHumanThink) ^rand["Are you there?" "don't be shy" "Do you still need time to think"]
-concept:(faqRobotThink) ^rand["Let me think for a while" "I am trying to remmember"]
-concept:(faqBye) ^rand["OK may be next time" "see you later"] 
+concept:(faqRobotThink) ^rand["Let me think for a while" "I am trying to remember"]
+concept:(faqNextTime) ^rand["OK may be next time" "Your choice, you know the best"] 
 concept:(faqStartProposal) Could you briefly describe your transaction that you want to do?
+concept:(faqUnderstood) ^rand["OK" "Understood" "of course" "you know the best"]
+concept:(faqAskAgain) Would you like to ask more question?
+concept:(faqAskML) Would you like to me send quick access link to your online banking channels?
+concept:(faqMLSent) ^rand["Great" "wonderful" "awsome" I have sent the link] 
+concept:(faqSurvey) was it helpful talking with me about your question? You can say simply answer me or use my tablet.
+concept:(yes) yes
+concept:(no) no
+concept:(surveyYes) ^rand["I am very happy to help you" "You make me the happiest humonoroid robot in the world"]
+concept:(surveyNo) opps I am sorry would you like to me call one of my great human friends?
+concept:(faqBye) ^rand["see you next time" "enjoy rest of your day"]
 
 u:(e:onStart) $Faq/Start=1
-u:(test) Success
-u1:(_*)  you said $1 $Faq/AnswerTest=$1
 
-u:(e:Faq/Start) ^goto(faqStart) #it helps to start conversation on start but it may be removed after service development complete
+
+u:(e:Faq/Start) ^gotoReactivate(faqStart) #it helps to start conversation on start but it may be removed after service development complete
 #u:(e:Faq/Replied) ^goto(faqReplied)
 
-proposal:%faqStart ~faqStartProposal ^stayInScope
-u:(_*)  ~faqRobotThink $Faq/StartSpeak=$1 
-u1:(e:Dialog/NoOneSpeak10) ~faqHumanThink ^stayInScope
-u2:(yes) OK ^stayInScope
-u2:(no) ~faqBye
-
-#proposal:%faqReplied I found same information for you. You can check my tablet. Whould you like to me send the link to your mobile bank ^stayInScope
-#u:(yes) OK thats greate! I send you the link $Faq/LinkSend=1
-#u:(no) OK another time
+u:(e:Faq/RepliedWithML) $Faq/RepliedWithML ^gotoReactivate(faqAskML)
+    
+u:(e:Faq/Replied) $Faq/Replied ^gotoReactivate(faqAskAgain)
 
 
+proposal:%faqAskML ~faqAskML 
+    u1:(~yes) ~faqMLSent $Faq/LinkSend=1 ^gotoReactivate(faqAskAgain)
+    u1:(~no) ~faqNextTime ^gotoReactivate(faqAskAgain)
 
+proposal:%faqAskAgain ~faqAskAgain 
+    u1:(~yes) ^gotoReactivate(faqStart)
+    u1:(~no) ~faqNextTime ^gotoReactivate(faqSurvey)
 
+proposal:%faqStart ~faqStartProposal 
+    u1:(_*)  ~faqRobotThink $Faq/StartSpeak=$1 
+    u1:(e:Dialog/NoOneSpeak20) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink ^stayInScope
+        u2:(~yes) ~faqUnderstood ^gotoReactivate(faqStart) ^stayInScope
+        u2:(~no) ~faqNextTime
+        
+proposal:%faqSurvey $Faq/StartSurvey=1 ~faqSurvey 
+    u1:(~yes) ~surveyYes 
+    u1:(~no) ~surveyNo  
+    
+u:(e:Faq/SurveyYes) ~surveyYes
+u:(e:Faq/SurveyNo) ~surveyNo
+    u1:(~yes) $Faq/RedirectQmatic=1
+    u1:(~no) ^gotoReactivate(faqBye)
 
-#bu noktada kollarini kapatip dusunen ve kafasini hafif sallayan bi animasyon yapilabilir. :) 
+proposal:%faqBye ~faqBye

@@ -20,7 +20,7 @@
   </dialogContent>
  </contents>
  <services>
-  <service autorun="false" execStart="main.py" name="FaqApp"/>
+  <service execStart="main.py" name="FaqApp" autorun="false"/>
  </services>
  <executableFiles>
   <file path="main.py"/>
