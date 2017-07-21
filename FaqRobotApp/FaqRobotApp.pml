@@ -20,6 +20,7 @@
         <File name="jquery-2.1.4.min" src="html/js/jquery-2.1.4.min.js" />
         <File name="main" src="html/js/main.js" />
         <File name="qimessaging_helper" src="html/js/qimessaging_helper.js" />
+        <File name="customerquery" src="customerquery.py" />
     </Resources>
     <Topics>
         <Topic name="Faq_enu" src="Faq/Faq_enu.top" topicName="Faq" language="en_US" />

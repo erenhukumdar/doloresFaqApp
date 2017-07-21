@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<package uuid="faqrobotapp-b60b0a" version="0.0.0">
+<package version="0.0.0" uuid="faqrobotapp-b60b0a">
  <names>
   <name lang="en_US">FAQApp</name>
  </names>
@@ -19,15 +19,15 @@
    <permissions/>
   </behaviorContent>
   <dialogContent typeVersion="1.0" topicName="Faq">
-   <topic path="Faq/Faq_enu.top" language="en_US"/>
+   <topic language="en_US" path="Faq/Faq_enu.top"/>
   </dialogContent>
   <dialogContent typeVersion="1.0" topicName="ML">
-   <topic path="ML/ML_enu.top" language="en_US"/>
+   <topic language="en_US" path="ML/ML_enu.top"/>
   </dialogContent>
  </contents>
  <services>
-  <service execStart="main.py" autorun="false" name="FaqApp"/>
-  <service execStart="ml.py" autorun="false" name="MLApp"/>
+  <service execStart="main.py" name="FaqApp" autorun="false"/>
+  <service execStart="ml.py" name="MLApp" autorun="false"/>
  </services>
  <executableFiles>
   <file path="main.py"/>

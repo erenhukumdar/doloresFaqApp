@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-
+import json
 import sys
 import qi
 import os
 import requests
+from customerquery import CustomerQuery
 
 
 
@@ -22,11 +23,19 @@ class FaqApp(object):
         self.logger = qi.Logger(self.service_name)
 
         # Do some initializations before the service is registered to NAOqi
+        self.memory = self.session.service('ALMemory')
         self.logger.info("Initializing...")
         # @TODO: insert init functions here
         self.create_signals()
         self.connect_to_preferences()
         self.logger.info("Initialized!")
+
+    #     Special memory event to under stand ML operation status
+        try:
+            self.is_magic_link = self.memory.getData('Faq/MLStatus')
+        except Exception, e:
+            self.logger.error(e)
+            self.is_magic_link = 0;
 
     @qi.nobind
     def start_app(self):
@@ -73,13 +82,16 @@ class FaqApp(object):
             self.record_duration = self.preferences.getValue('faq', 'record_duration')
             self.surveyUrl = self.preferences.getValue('faq', 'survey_url')
             self.main_app_id = self.preferences.getValue('global_variables', 'main_app_id')
+            self.feedback_app_id = self.preferences.getValue('global_variables', 'feedback_app_id')
+            self.auth_launcher_id = self.preferences.getValue('global_variables', 'auth_launcher_id')
+            self.link="http://www.isbank.com.tr/TR/kobi/dis-ticaret/dis-ticaret-urunleri/doviz-havalesi/Sayfalar/doviz-havalesi.aspx"
         except Exception, e:
             self.logger.info("failed to get preferences".format(e))
         self.logger.info("Successfully connected to preferences system")
 
     @qi.nobind
     def create_signals(self):
-        self.logger.info("Creating ColorChosen event...")
+        self.logger.info("Creating event realations for FAQ_App...")
         # When you can, prefer qi.Signals instead of ALMemory events
         memory = self.session.service("ALMemory")
 
@@ -102,11 +114,18 @@ class FaqApp(object):
         event_connection = event_subscriber.signal.connect(self.on_survey_start)
         self.subscriber_list.append([event_subscriber, event_connection])
 
-        event_name = "Faq/ExitApp"
+        event_name = "Faq/OpenMain"
         memory.declareEvent(event_name)
         event_subscriber = memory.subscriber(event_name)
         event_connection = event_subscriber.signal.connect(self.exit_app)
         self.subscriber_list.append([event_subscriber, event_connection])
+
+        event_name = "Faq/MLQuestion"
+        memory.declareEvent(event_name)
+        event_subscriber = memory.subscriber(event_name)
+        event_connection = event_subscriber.signal.connect(self.ml_quesiton)
+        self.subscriber_list.append([event_subscriber, event_connection])
+
 
         self.logger.info("Event created!")
 
@@ -132,7 +151,10 @@ class FaqApp(object):
             dialog.activateTopic(self.loaded_topic)
             dialog.subscribe(self.service_name)
             self.logger.info("Dialog loaded!")
-            dialog.gotoTag("faqStart", "Faq")
+            if self.is_magic_link == 0:
+                dialog.gotoTag("faqStart", "Faq")
+            else:
+                self.on_magiclink_wanted(1)
             self.logger.info('tag has been located')
         except Exception, e:
             self.logger.info("Error while loading dialog: {}".format(e))
@@ -177,17 +199,11 @@ class FaqApp(object):
             self.logger.info("Get the input by event: {}".format(value))
             answer = self.send_question_to_smartmoderation(value)
             memory = self.session.service("ALMemory")
-
-            if answer["conversationStep"] == False:
-                memory.raiseEvent("Faq/Replied", answer['message'])
-                memory.insertData("ML", "http://www.isbank.com.tr/TR/kobi/dis-ticaret/dis-ticaret-urunleri/doviz-havalesi/Sayfalar/doviz-havalesi.aspx")
+            self.logger.info('SM Answer is:'.format(answer['message']))
+            if answer['message'] == 'Please write your request again.':
+                answer['message'] = 'Please ask your question again.'
             else:
                 memory.raiseEvent("Faq/ReplyAndContinue", answer['message'])
-
-            # dialog = self.session.service("ALDialog")
-            # dialog.activateTag("faqReplied", "Faq")
-            # dialog.gotoTag("faqReplied", "Faq")
-            # self.show_sm_link_on_tablet(link)
 
     @qi.bind(methodName="onExit", returnType=qi.Void)
     def on_exit(self, value):
@@ -199,43 +215,76 @@ class FaqApp(object):
         try:
             payload = {'question': value}
             response = requests.get(self.sm_url, params=payload, timeout=self.sm_timeout)
-            self.logger.info(response.text)
-            return response.json()
+            json_response = response.json()
+            if response.status_code != 200 or 'Errors' in json_response:
+                self.logger.error('magic link save request not completed or failed')
+            else:
+                self.logger.info(response.text)
+                return response.json()
         except Exception, e:
             self.logger.info('Error while requesting result: {}'.format(e))
-            memory = self.session.service("ALMemory")
-            memory.raiseEvent("Faq/Error", 1)
+            self.memory.raiseEvent("Faq/Error", 1)
             return "oppss something happened"
 
     @qi.bind(methodName="onMagicLinkWanted", paramsType=(), returnType=qi.Void)
-    def on_magiclink_wanted(self):
+    def on_magiclink_wanted(self, value):
         self.logger.info('magic link wanted!')
 #         for a while magic link service will be pushed only to db
-        memory = self.session.service("ALMemory")
-        customer_info = memory.getData("Global/CurrentCustomer")
-        if customer_info != "":
-            memory.raiseEvent('Faq/MLSendSuccess',1)
-            #         @ToDo: magic link save service will be here.
+        customer_info = CustomerQuery()
+        customer_info.fromjson(self.memory.getData("Global/CurrentCustomer"))
+
+        payload = json.dumps({'customerId': customer_info.customer_number, 'link': self.link})
+
+        response = requests.post(self.sm_url, data=payload, auth=(self.sm_basic_username, self.sm_basic_pass))
+        json_response = response.json()
+        if response.status_code != 200 or 'Errors' in json_response:
+            self.logger.error('magic link save request not completed or failed')
         else:
-            memory.raiseEvent('Faq/MLSendFailure', 1)
+            self.memory.raiseEvent('MLSendSuccess', 1)
 
     @qi.nobind
     def show_sm_link_on_tablet(self, link):
         self.logger.info("web view has been loaded")
-        self.ts.loadUrl(link)
+        self.ts.loadUrl(self.link)
 
     @qi.nobind
     def on_survey_start(self, link):
         self.logger.info("survey has been started")
-        # self.ts.loadUrl(self.surveyUrl)
+        autonomous_life = self.session.service('ALAutonomousLife')
+        autonomous_life.switchFocus(self.feedback_app_id)
 
     @qi.nobind
     def exit_app(self, value):
         self.logger.info("exit has been started")
         self.cleanup()
+        self.memory_cleanup()
+        try:
+            self.memory.removeData('Faq/MLStatus')
+        except Exception, e:
+            self.logger.error(e)
         autonomous_life = self.session.service('ALAutonomousLife')
         autonomous_life.switchFocus(self.main_app_id)
         # self.ts.loadUrl(self.surveyUrl)
+
+    @qi.nobind
+    def ml_question(self, value):
+        # which handles the ml question
+        try:
+            customer_info = CustomerQuery()
+            customer_info.fromjson(self.memory.getData("Global/CurrentCustomer"))
+            self.logger.info("customer no:" + customer_info.customer_number)
+        except Exception, e:
+            self.logger.error(e)
+            customer_info = ''
+
+        if customer_info != '':
+            self.memory.raiseEvent('Faq/AuthNeed', 0)
+        else:
+            self.memory.raiseEvent('Faq/AuthNeed', 1)
+    @qi.nobind
+    def memory_cleanup(self):
+        self.memory.removeData('Faq/MLStatus')
+
 if __name__ == "__main__":
     # with this you can run the script for tests on remote robots
     # run : python main.py --qi-url 123.123.123.123
