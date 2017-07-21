@@ -2,27 +2,28 @@
 <Package name="FaqRobotApp" format_version="4">
     <Manifest src="manifest.xml" />
     <BehaviorDescriptions>
-        <BehaviorDescription name="behavior" src="." xar="behavior.xar" />
+        <BehaviorDescription name="behavior" src="MLSend" xar="behavior.xar" />
+        <BehaviorDescription name="behavior" src="faq_behave" xar="behavior.xar" />
     </BehaviorDescriptions>
     <Dialogs>
         <Dialog name="Faq" src="Faq/Faq.dlg" />
+        <Dialog name="ML" src="ML/ML.dlg" />
     </Dialogs>
     <Resources>
         <File name="main" src="main.py" />
         <File name="index" src="html/index.html" />
-        <File name="main" src="html/main.js" />
-        <File name="__init__" src="wit/__init__.py" />
-        <File name="__init__" src="wit/__init__.pyc" />
-        <File name="wit" src="wit/wit.py" />
-        <File name="wit" src="wit/wit.pyc" />
-        <File name="qimessaging_helper" src="html/qimessaging_helper.js" />
         <File name="questionmark" src="html/images/questionmark.png" />
-        <File name="survey" src="html/survey.html" />
-        <File name="dislike" src="html/images/dislike.jpg" />
-        <File name="like" src="html/images/like.jpg" />
+        <File name="swiftswords_ext" src="swiftswords_ext.mp3" />
+        <File name="taichimove" src="taichimove.pmt" />
+        <File name="ml" src="ml.py" />
+        <File name="pepper" src="html/css/pepper.css" />
+        <File name="jquery-2.1.4.min" src="html/js/jquery-2.1.4.min.js" />
+        <File name="main" src="html/js/main.js" />
+        <File name="qimessaging_helper" src="html/js/qimessaging_helper.js" />
     </Resources>
     <Topics>
         <Topic name="Faq_enu" src="Faq/Faq_enu.top" topicName="Faq" language="en_US" />
+        <Topic name="ML_enu" src="ML/ML_enu.top" topicName="" language="" />
     </Topics>
     <IgnoredPaths />
     <Translations auto-fill="en_US">

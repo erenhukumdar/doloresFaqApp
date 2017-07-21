@@ -15,7 +15,7 @@ concept:(faqGreeting) I need you to briefly describe your transaction that you w
 concept:(faqHumanThink) ^rand["Are you there?" "don't be shy" "Do you still need time to think"]
 concept:(faqRobotThink) ^rand["Let me think for a while" "I am trying to remember"]
 concept:(faqNextTime) ^rand["OK may be next time" "Your choice, you know the best"] 
-concept:(faqStartProposal) Could you briefly describe your transaction that you want to do?
+concept:(faqStartProposal) Now it is time to ask me questions. Could you briefly describe your transaction that you want to do?
 concept:(faqUnderstood) ^rand["OK" "Understood" "of course" "you know the best"]
 concept:(faqAskAgain) Would you like to ask more question?
 concept:(faqAskML) Would you like to me send quick access link to your online banking channels?
@@ -26,16 +26,15 @@ concept:(no) no
 concept:(surveyYes) ^rand["I am very happy to help you" "You make me the happiest humonoroid robot in the world"]
 concept:(surveyNo) opps I am sorry would you like to me call one of my great human friends?
 concept:(faqBye) ^rand["see you next time" "enjoy rest of your day"]
-
-u:(e:onStart) $Faq/Start=1
-
-
-u:(e:Faq/Start) ^gotoReactivate(faqStart) #it helps to start conversation on start but it may be removed after service development complete
-#u:(e:Faq/Replied) ^goto(faqReplied)
+concept:(faqError) ["I am sorry, I got confused. I think my human friends can help you better. Would you like to me get a queue number for you?"]
+concept:(MLSendSuccess) ["Your shortcut has been send successfully"]
 
 u:(e:Faq/RepliedWithML) $Faq/RepliedWithML ^gotoReactivate(faqAskML)
     
 u:(e:Faq/Replied) $Faq/Replied ^gotoReactivate(faqAskAgain)
+u:(e:Faq/ReplyAndContinue) $Faq/ReplyAndContinue ^gotoReactivate(faqStartNoSpeak)
+u:(e:Faq/MLSendSuccess) ~mlSendSuccess ^gotoReactivate(faqAskAgain)
+
 
 
 proposal:%faqAskML ~faqAskML 
@@ -46,15 +45,22 @@ proposal:%faqAskAgain ~faqAskAgain
     u1:(~yes) ^gotoReactivate(faqStart)
     u1:(~no) ~faqNextTime ^gotoReactivate(faqSurvey)
 
-proposal:%faqStart ~faqStartProposal 
+proposal:%faqStart ~faqStartProposal $FaqNoSpeak=0
+    u1:(_*)  ~faqRobotThink $Faq/StartSpeak=$1 
+    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak=0) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink $FaqNoSpeak=1
+        u2:(~yes) ~faqUnderstood ^gotoReactivate(faqStart) ^stayInScope
+        u2:(~no) ~faqNextTime
+    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak=1) ^gotoReactivate(faqBye)
+
+proposal:%faqStartNoSpeak  
     u1:(_*)  ~faqRobotThink $Faq/StartSpeak=$1 
     u1:(e:Dialog/NoOneSpeak20) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink ^stayInScope
         u2:(~yes) ~faqUnderstood ^gotoReactivate(faqStart) ^stayInScope
         u2:(~no) ~faqNextTime
-        
-proposal:%faqSurvey $Faq/StartSurvey=1 ~faqSurvey 
-    u1:(~yes) ~surveyYes 
-    u1:(~no) ~surveyNo  
+                
+proposal:%faqSurvey ~faqSurvey 
+    u1:(~yes) $Faq/StartSurvey=1
+    u1:(~no) ~surveyNo  $Faq/OpenMain=1
     
 u:(e:Faq/SurveyYes) ~surveyYes
 u:(e:Faq/SurveyNo) ~surveyNo
@@ -62,3 +68,9 @@ u:(e:Faq/SurveyNo) ~surveyNo
     u1:(~no) ^gotoReactivate(faqBye)
 
 proposal:%faqBye ~faqBye
+
+proposal:%faqError ~faqError
+    u1:(~yes) $Faq/RedirectQmatic=1
+    u1:(~no) ^gotoReactivate(faqBye)
+
+

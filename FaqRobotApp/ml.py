@@ -4,11 +4,12 @@ import sys
 import qi
 import os
 import requests
+from wit import Wit
+from requests.auth import HTTPBasicAuth
 
 
 
-
-class FaqApp(object):
+class MLApp(object):
     subscriber_list = []
     loaded_topic = ""
 
@@ -34,6 +35,7 @@ class FaqApp(object):
         print "Starting app..."
         # @TODO: insert whatever the app should do to start
         self.show_screen()
+        self.check_memory_for_auth()
         self.start_dialog()
         self.logger.info("Started!")
 
@@ -54,10 +56,7 @@ class FaqApp(object):
         self.stop_dialog()
         self.hide_screen()
         self.logger.info("Cleaned!")
-        try:
-            self.audio.stopMicrophonesRecording()
-        except Exception, e:
-            self.logger.info("microphone already closed")
+
 
     @qi.nobind
     def connect_to_preferences(self):
@@ -72,10 +71,23 @@ class FaqApp(object):
             self.sm_timeout = int(self.preferences.getValue('faq', 'sm_timeout'))
             self.record_duration = self.preferences.getValue('faq', 'record_duration')
             self.surveyUrl = self.preferences.getValue('faq', 'survey_url')
-            self.main_app_id = self.preferences.getValue('global_variables', 'main_app_id')
         except Exception, e:
             self.logger.info("failed to get preferences".format(e))
         self.logger.info("Successfully connected to preferences system")
+
+    @qi.nobind
+    def check_memory_for_auth(self):
+        memory = self.session.service('ALMemory')
+        try:
+            customer_info = memory.getData("Global/CurrentCustomer")
+            if customer_info != "":
+                memory.raiseEvent('ML/MLSendSuccess', 1)
+                #         @ToDo: magic link save service will be here.
+            else:
+                memory.raiseEvent('ML/MLSendFailure', 1)
+        except Exception, e:
+            memory.raiseEvent('ML/MLSendFailure', 1)
+
 
     @qi.nobind
     def create_signals(self):
@@ -88,24 +100,6 @@ class FaqApp(object):
         event_subscriber = memory.subscriber(event_name)
         event_connection = event_subscriber.signal.connect(self.on_speech_faq_input)
         # event_connection = event_subscriber.signal.connect(self.on_speech_faq_input)
-        self.subscriber_list.append([event_subscriber, event_connection])
-
-        event_name = "Faq/LinkSend"
-        memory.declareEvent(event_name)
-        event_subscriber = memory.subscriber(event_name)
-        event_connection = event_subscriber.signal.connect(self.on_magiclink_wanted)
-        self.subscriber_list.append([event_subscriber, event_connection])
-
-        event_name = "Faq/SurveyStart"
-        memory.declareEvent(event_name)
-        event_subscriber = memory.subscriber(event_name)
-        event_connection = event_subscriber.signal.connect(self.on_survey_start)
-        self.subscriber_list.append([event_subscriber, event_connection])
-
-        event_name = "Faq/ExitApp"
-        memory.declareEvent(event_name)
-        event_subscriber = memory.subscriber(event_name)
-        event_connection = event_subscriber.signal.connect(self.exit_app)
         self.subscriber_list.append([event_subscriber, event_connection])
 
         self.logger.info("Event created!")
@@ -125,14 +119,14 @@ class FaqApp(object):
         self.logger.info("Loading dialog")
         dialog = self.session.service("ALDialog")
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        topic_path = os.path.realpath(os.path.join(dir_path, "Faq", "Faq_enu.top"))
+        topic_path = os.path.realpath(os.path.join(dir_path, "ML", "ML_enu.top"))
         self.logger.info("File is: {}".format(topic_path))
         try:
             self.loaded_topic = dialog.loadTopic(topic_path)
             dialog.activateTopic(self.loaded_topic)
             dialog.subscribe(self.service_name)
             self.logger.info("Dialog loaded!")
-            dialog.gotoTag("faqStart", "Faq")
+            dialog.gotoTag("mlStart", "ML")
             self.logger.info('tag has been located')
         except Exception, e:
             self.logger.info("Error while loading dialog: {}".format(e))
@@ -171,77 +165,22 @@ class FaqApp(object):
         except Exception, e:
             self.logger.info("Error while unloading tablet: {}".format(e))
 
-    @qi.bind(methodName="onSpeechFaqInput", paramsType=(qi.String,), returnType=qi.Void)
-    def on_speech_faq_input(self, value):
-        if value:
-            self.logger.info("Get the input by event: {}".format(value))
-            answer = self.send_question_to_smartmoderation(value)
-            memory = self.session.service("ALMemory")
-
-            if answer["conversationStep"] == False:
-                memory.raiseEvent("Faq/Replied", answer['message'])
-                memory.insertData("ML", "http://www.isbank.com.tr/TR/kobi/dis-ticaret/dis-ticaret-urunleri/doviz-havalesi/Sayfalar/doviz-havalesi.aspx")
-            else:
-                memory.raiseEvent("Faq/ReplyAndContinue", answer['message'])
-
-            # dialog = self.session.service("ALDialog")
-            # dialog.activateTag("faqReplied", "Faq")
-            # dialog.gotoTag("faqReplied", "Faq")
-            # self.show_sm_link_on_tablet(link)
-
     @qi.bind(methodName="onExit", returnType=qi.Void)
     def on_exit(self, value):
         self.stop_app()
 
-    @qi.bind(methodName="test", paramsType=(qi.String, ), returnType=qi.String)
-    def send_question_to_smartmoderation(self, value):
-        self.logger.info('Transfer started..')
-        try:
-            payload = {'question': value}
-            response = requests.get(self.sm_url, params=payload, timeout=self.sm_timeout)
-            self.logger.info(response.text)
-            return response.json()
-        except Exception, e:
-            self.logger.info('Error while requesting result: {}'.format(e))
-            memory = self.session.service("ALMemory")
-            memory.raiseEvent("Faq/Error", 1)
-            return "oppss something happened"
-
-    @qi.bind(methodName="onMagicLinkWanted", paramsType=(), returnType=qi.Void)
-    def on_magiclink_wanted(self):
-        self.logger.info('magic link wanted!')
-#         for a while magic link service will be pushed only to db
-        memory = self.session.service("ALMemory")
-        customer_info = memory.getData("Global/CurrentCustomer")
-        if customer_info != "":
-            memory.raiseEvent('Faq/MLSendSuccess',1)
-            #         @ToDo: magic link save service will be here.
-        else:
-            memory.raiseEvent('Faq/MLSendFailure', 1)
-
     @qi.nobind
-    def show_sm_link_on_tablet(self, link):
+    def show_sm_link_on_tablet(self,link):
         self.logger.info("web view has been loaded")
         self.ts.loadUrl(link)
 
-    @qi.nobind
-    def on_survey_start(self, link):
-        self.logger.info("survey has been started")
-        # self.ts.loadUrl(self.surveyUrl)
 
-    @qi.nobind
-    def exit_app(self, value):
-        self.logger.info("exit has been started")
-        self.cleanup()
-        autonomous_life = self.session.service('ALAutonomousLife')
-        autonomous_life.switchFocus(self.main_app_id)
-        # self.ts.loadUrl(self.surveyUrl)
 if __name__ == "__main__":
     # with this you can run the script for tests on remote robots
     # run : python main.py --qi-url 123.123.123.123
     app = qi.Application(sys.argv)
     app.start()
-    service_instance = FaqApp(app)
+    service_instance = MLApp(app)
     service_id = app.session.registerService(service_instance.service_name, service_instance)
     service_instance.start_app()
     app.run()
