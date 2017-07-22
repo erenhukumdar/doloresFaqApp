@@ -15,11 +15,11 @@ concept:(faqGreeting) I need you to briefly describe your transaction that you w
 concept:(faqHumanThink) ^rand["Are you there?" "don't be shy" "Do you still need time to think"]
 concept:(faqRobotThink) ^rand["hmmm" "I am trying to remember"]
 concept:(faqNextTime) ^rand["OK may be next time" "Your choice, you know the best"] 
-concept:(faqStartProposal) Now it is time to ask me questions. Could you briefly describe your transaction that you want to do?
+concept:(faqStartProposal) Now it is time to ask me questions. During our conversation if you want to return main menu you can push exit button or you can say exit! I need to know your transaction briefly like examples on my tablet.
 concept:(faqUnderstood) ^rand["OK" "Understood" "of course" "you know the best"]
 concept:(faqAskAgain) Would you like to ask more question?
 concept:(faqAskML) Would you like to me send quick access link to your online banking channels?
-concept:(faqMLSent) ^rand["Great" "wonderful" "awsome" I have sent the link] 
+concept:(faqMLSent) ^rand["Great" "wonderful" "awsome"] I have sent the link
 concept:(faqSurveyAndExit) Was it helpful talking with me about your question? Before you return my main menu, would you like to help me by answering simple survey?
 concept:(yes) yes
 concept:(no) no
@@ -32,46 +32,53 @@ concept:(faqAskAgainYes) ["Lets continue" "Great! I love questions!" "Wonderful!
 concept:(getConfirmation) ["To send magic link I need to know you. Would you like to authenticate first?"]
 concept:(confirmationYes) ["I am really excited to meet you"]
 concept:(confirmationNo) ["I hope one day we can meet more closely"]
+concept:(faqLastBye) I think you are gone or very shy. 
+concept:(faqNotAuth) ["I am sorry It seems you couldn't authenticate. Since I don't know your customer number. I cannot send my magic link to you."]
+concept:(notUnderstood) I am sorry! I couldn't understand you. You can ask me non financial questions for instance ["how can I pay my bills" "How much is dollar" "what is credit rates"]
 
-u:(e:Faq/RepliedWithML $Faq/AuthNeed==0) $Faq/RepliedWithML ^gotoReactivate(faqAskML) 
-u:(e:Faq/RepliedWithML $Faq/AuthNeed==1) $Faq/RepliedWithML ^gotoReactivate(faqAskMLNoAuth) 
+u:(e:Faq/RepliedWithML) $Faq/RepliedWithML ^gotoReactivate(faqAskML) 
 u:(e:Faq/ReplyAndContinue) $Faq/ReplyAndContinue ^gotoReactivate(faqStartNoSpeak)
-u:(e:Faq/MLSendSuccess) ~mlSendSuccess ^gotoReactivate(faqAskAgain)
+u:(e:Faq/MLSendSuccess) ~faqMLSent ^gotoReactivate(faqAskAgain)
+u:(e:Faq/Error) ^gotoReactivate(faqError)
+u:(e:Faq/MLNotAuth) ^gotoReactivate(faqNotAuth)
 
 proposal:%faqAskML ~faqAskML 
     u1:(~yes $Faq/AuthNeed==0) ~faqMLSent $Faq/LinkSend=1 ^gotoReactivate(faqAskAgain)
     u1:(~yes $Faq/AuthNeed==1) ~getConfirmation
-        u2:(~yes) ~confirmationYes $Faq/OpenAuth=1
+        u2:(~yes) ~confirmationYes $Faq/OpenAuth=1 $Faq/MLStatus=1
         u2:(~no) ~confirmationNo ^gotoReactivate(faqAskAgain)
     u1:(~no) ~faqNextTime ^gotoReactivate(faqAskAgain)
     
 proposal:%faqStart ~faqStartProposal $FaqNoSpeak=0
     u1:(_*)  ~faqRobotThink $Faq/StartSpeak=$1
-    u1:(~faqMLInput)  ~faqRobotThink $Faq/MLQuestion=1
-    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==0) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink $FaqNoSpeak=1 ^gotoReactivate(faqStart)
-    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==1) ^gotoReactivate(faqBye)
+    u1:(_~faqMLInput)  ~faqRobotThink $Faq/MLQuestion=$1
+    u1:(e:Dialog/NoOneSpeak10 $FaqNoSpeak==0) $FaqNoSpeak=1 ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink ^stayInScope
+    u1:(e:Dialog/NoOneSpeak10 $FaqNoSpeak==1) ^gotoReactivate(faqBye)
     u1:(~exit) ^gotoReactivate(faqBye)
+    u1:(e:Dialog/NotUnderstood2) ~notUnderstood ^stayInScope
 
 proposal:%faqStartNoSpeak $FaqNoSpeak=0
     u1:(_*)  ~faqRobotThink $Faq/StartSpeak=$1
-    u1:(~faqMLInput)  ~faqRobotThink $Faq/MLQuestion=1
-    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==0) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink $FaqNoSpeak=1 ^gotoReactivate(faqStart)
+    u1:(_~faqMLInput)  ~faqRobotThink $Faq/MLQuestion==$1
+    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==0) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink $FaqNoSpeak=1 ^stayInScope
     u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==1) ^gotoReactivate(faqBye)
     u1:(~exit) ^gotoReactivate(faqBye)
+    u1:(e:Dialog/NotUnderstood2) ~notUnderstood ^stayInScope
 
 proposal:%faqAskAgain ~faqAskAgain $FaqNoSpeak=0
     u1:(~yes) ~faqAskAgainYes ^gotoReactivate(faqStartNoSpeak)
     u1:(~no) ^gotoReactivate(faqBye)
-    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==0) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink $FaqNoSpeak=1 ^gotoReactivate(faqStart)
+    u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==0) ^start(animations/Stand/Gestures/ComeOn_1) ~faqHumanThink $FaqNoSpeak=1 ^stayInScope
     u1:(e:Dialog/NoOneSpeak5 $FaqNoSpeak==1) ^gotoReactivate(faqBye)
     u1:(~exit) ^gotoReactivate(faqBye)
     
 proposal:%faqBye ~faqSurveyAndExit 
     u1:(~yes) $Faq/SurveyStart=1
     u1:(~no) ~surveyNo  $Faq/OpenMain=1
-
+    u1:(e:Dialog/NoOneSpeak5) ~faqLastBye $Faq/OpenMain=1
+    
 proposal:%faqError ~faqError
     u1:(~yes) $Faq/RedirectQmatic=1
     u1:(~no) ^gotoReactivate(faqBye)
 
-
+proposal:%faqNotAuth ~faqNotAuth ^gotoReactivate(faqBye)

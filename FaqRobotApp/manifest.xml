@@ -10,19 +10,12 @@
   <language>en_US</language>
  </descriptionLanguages>
  <contents>
-  <behaviorContent path="MLSend">
-   <nature>interactive</nature>
-   <permissions/>
-  </behaviorContent>
   <behaviorContent path="faq_behave">
    <nature>interactive</nature>
    <permissions/>
   </behaviorContent>
   <dialogContent typeVersion="1.0" topicName="Faq">
    <topic language="en_US" path="Faq/Faq_enu.top"/>
-  </dialogContent>
-  <dialogContent typeVersion="1.0" topicName="ML">
-   <topic language="en_US" path="ML/ML_enu.top"/>
   </dialogContent>
  </contents>
  <services>

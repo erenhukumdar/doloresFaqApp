@@ -2,12 +2,10 @@
 <Package name="FaqRobotApp" format_version="4">
     <Manifest src="manifest.xml" />
     <BehaviorDescriptions>
-        <BehaviorDescription name="behavior" src="MLSend" xar="behavior.xar" />
         <BehaviorDescription name="behavior" src="faq_behave" xar="behavior.xar" />
     </BehaviorDescriptions>
     <Dialogs>
         <Dialog name="Faq" src="Faq/Faq.dlg" />
-        <Dialog name="ML" src="ML/ML.dlg" />
     </Dialogs>
     <Resources>
         <File name="main" src="main.py" />
@@ -24,7 +22,6 @@
     </Resources>
     <Topics>
         <Topic name="Faq_enu" src="Faq/Faq_enu.top" topicName="Faq" language="en_US" />
-        <Topic name="ML_enu" src="ML/ML_enu.top" topicName="" language="" />
     </Topics>
     <IgnoredPaths />
     <Translations auto-fill="en_US">
