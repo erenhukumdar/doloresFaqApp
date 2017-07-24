@@ -3,10 +3,6 @@
 import sys
 import qi
 import os
-import requests
-from wit import Wit
-from requests.auth import HTTPBasicAuth
-
 
 
 class MLApp(object):
