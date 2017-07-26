@@ -11,14 +11,13 @@
         <File name="main" src="main.py" />
         <File name="index" src="html/index.html" />
         <File name="questionmark" src="html/images/questionmark.png" />
-        <File name="swiftswords_ext" src="swiftswords_ext.mp3" />
-        <File name="taichimove" src="taichimove.pmt" />
         <File name="ml" src="ml.py" />
         <File name="pepper" src="html/css/pepper.css" />
         <File name="jquery-2.1.4.min" src="html/js/jquery-2.1.4.min.js" />
         <File name="main" src="html/js/main.js" />
         <File name="qimessaging_helper" src="html/js/qimessaging_helper.js" />
         <File name="customerquery" src="customerquery.py" />
+        <File name="customerquery" src="customerquery.pyc" />
     </Resources>
     <Topics>
         <Topic name="Faq_enu" src="Faq/Faq_enu.top" topicName="Faq" language="en_US" />

@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import json
 import sys
+
+import requests
+import cgi
 import qi
 import os
-import requests
 from customerquery import CustomerQuery
 
 
@@ -132,7 +134,6 @@ class FaqApp(object):
         event_connection = event_subscriber.signal.connect(self.ml_question)
         self.subscriber_list.append([event_subscriber, event_connection])
 
-
         self.logger.info("Event created!")
 
     @qi.nobind
@@ -205,7 +206,7 @@ class FaqApp(object):
             self.logger.info("Get the input by event: {}".format(value))
             answer = self.send_question_to_smartmoderation(value)
             memory = self.session.service("ALMemory")
-            self.logger.info('SM Answer is:'.format(answer['message']))
+            # self.logger.info('SM Answer is:'.format(answer['message']))
             if answer['message'] == 'Please write your request again.':
                 self.logger.info('the ask again message has arrived')
                 memory.raiseEvent("Faq/ReplyAndContinue", 'Please ask your question again.')
@@ -220,8 +221,11 @@ class FaqApp(object):
     def send_question_to_smartmoderation(self, value):
         self.logger.info('Transfer started..')
         try:
-            payload = {'question': value}
-            response = requests.get(self.sm_url, params=payload, timeout=self.sm_timeout)
+            self.logger.info('input value is =' + value)
+            value = self.escape_html(value)
+            payload = {"question": value}
+            self.logger.info('encoded' + value)
+            response = requests.get(self.sm_url, params=payload)
             json_response = response.json()
             if response.status_code != 200 or 'Errors' in json_response:
                 self.logger.error('magic link save request not completed or failed')
@@ -271,15 +275,12 @@ class FaqApp(object):
     def exit_app(self, value):
         self.logger.info("exit has been started")
         self.cleanup()
-        self.memory_cleanup()
         try:
             self.memory.removeData('Faq/MLStatus')
         except Exception, e:
             self.logger.error(e)
         autonomous_life = self.session.service('ALAutonomousLife')
         autonomous_life.switchFocus(self.main_app_id)
-        # self.ts.loadUrl(self.surveyUrl)
-        autonomous_life.switchFocus(self.feedback_app_id)
         self.stop_app()
 
     @qi.nobind
@@ -290,6 +291,7 @@ class FaqApp(object):
         autonomous_life = self.session.service('ALAutonomousLife')
         autonomous_life.switchFocus(self.auth_launcher_id)
         # self.ts.loadUrl(self.surveyUrl)
+
     @qi.nobind
     def ml_question(self, value):
         self.logger.info('ml question:'+value)
@@ -309,6 +311,7 @@ class FaqApp(object):
         else:
             self.memory.raiseEvent('Faq/AuthNeed', 1)
             self.logger.info('auth is needed')
+
         if value:
             self.logger.info("Get the input by event: {}".format(value))
             answer = self.send_question_to_smartmoderation(value)
@@ -323,6 +326,22 @@ class FaqApp(object):
     def memory_cleanup(self):
         self.memory.removeData('Faq/MLStatus')
 
+    @qi.nobind
+    def make_unicode(self, value):
+
+        value = value.decode("UTF-8")
+        value = value.encode('ascii', 'ignore')
+        self.logger.info('ascii encode=' + value)
+        return value
+
+
+    @qi.nobind
+    def escape_html(self, text):
+        """escape strings for display in HTML"""
+        return cgi.escape(text, quote=True). \
+            replace(u'\n', u'<br />'). \
+            replace(u'\t', u'&emsp;'). \
+            replace(u' ', u' &nbsp;')
 
 
 if __name__ == "__main__":

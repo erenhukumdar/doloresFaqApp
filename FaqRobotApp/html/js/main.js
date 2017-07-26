@@ -43,3 +43,15 @@ function exit()
 {
    session.raiseEvent("Faq/ExitApp", 1);
 }
+
+function showListening()
+{
+    $("#bars").css("visibility", "visible");
+    // $("#bubbles").css("visibility", "hidden");
+    // hidePieChart();
+}
+
+function hideListening()
+{
+    $("#bars").css("visibility", "hidden");
+}
