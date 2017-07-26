@@ -7,7 +7,7 @@ import cgi
 import qi
 import os
 from customerquery import CustomerQuery
-
+from chirpsdk import chirpsdk
 
 class FaqApp(object):
     subscriber_list = []
@@ -29,7 +29,20 @@ class FaqApp(object):
         self.create_signals()
         self.connect_to_preferences()
         self.logger.info("Initialized!")
+        sdk = chirpsdk.ChirpSDK('9NgAMLH11neQ0An3DwsOXBI1j', 'bUHBFEG2QWStKC6dB9VIrdvvvhM1PZrEmiDvtR47pg8YUER4ff')
+        chirp = sdk.create_chirp({
+            'title': 'The Godfather',
+            'classic': True,
+            'imdb': {
+                'id': 'tt0068646',
+                'rating': 9.2,
+            },
+        })
+        print chirp.identifier
+        sdk.save_wav(chirp,filename='/home/nao/recordings/sample.wav',offline=False)
 
+        audio = self.session.service('ALAudioPlayer')
+        audio.playFile('/home/nao/recordings/sample.wav', 1.0, 0.0)
     #     Special memory event to under stand ML operation status
         try:
             self.is_magic_link = self.memory.getData('Faq/MLStatus')
