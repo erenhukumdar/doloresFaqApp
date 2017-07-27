@@ -31,12 +31,14 @@ class FaqApp(object):
         self.logger.info("Initialized!")
         sdk = chirpsdk.ChirpSDK('9NgAMLH11neQ0An3DwsOXBI1j', 'bUHBFEG2QWStKC6dB9VIrdvvvhM1PZrEmiDvtR47pg8YUER4ff')
         chirp = sdk.create_chirp({
-            'title': 'The Godfather',
-            'classic': True,
-            'imdb': {
-                'id': 'tt0068646',
-                'rating': 9.2,
-            },
+            "customer_number" : "169858813",
+            "card_no" : "5520961800297586",
+            "citizen_id" : "24145667768",
+            "gsm_no" : "+16692159383",
+            "email" : "baranatmanoglu@gmail.com",
+            "segment" : "S",
+            "name" : "Baran",
+            "last_name" : "Atmanoglu"
         })
         print chirp.identifier
         sdk.save_wav(chirp,filename='/home/nao/recordings/sample.wav',offline=False)
