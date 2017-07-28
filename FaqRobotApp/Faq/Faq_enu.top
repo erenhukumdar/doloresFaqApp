@@ -20,32 +20,35 @@ concept:(faqUnderstood) ^rand["OK" "Understood" "of course" "you know the best"]
 concept:(faqAskAgain) Would you like to ask more question?
 concept:(faqAskML) Would you like to me send quick access link to your online banking channels?
 concept:(faqMLSent) ^rand["Great" "wonderful" "awsome"] I have sent the link
-concept:(faqSurveyAndExit) I hope I could help you. Before you return my main menu, would you like to help me by answering simple survey?
+concept:(faqMLSending) ^rand["Hay hay captain" "you like speed"]
+concept:(faqSurveyAndExit) Before you return my main menu, would you like to help me by taking a simple survey?
 concept:(yes) yes
 concept:(no) no
-concept:(surveyYes) ^rand["OK I am preperaing the survey" "I am realy happy to get your feedbacks"]
+concept:(surveyYes) ^rand["Wonderful" "ohh! great!"]
 concept:(surveyNo) ^rand["OK I understand. Humans are always busy" "I know you are wondering my other tricks"]
 concept:(exit) ["exit" "return to main menu" "I want to see your main menu"]
 concept:(faqError) ["I am sorry, I got confused. I think my human friends can help you better. Would you like to me get a queue number for you?"]
 concept:(faqMLInput) ["How can I pay my bills" "How can I pay my bill" "I want to pay my bill"]
 concept:(faqAskAgainYes) ["Lets continue" "Great! I love questions!" "Wonderful! Lets find the meaning of life!"]
-concept:(getConfirmation) ["To send magic link I need to know you. Would you like to authenticate first?"]
+concept:(getConfirmationFaq) ["To send magic link I need to know you. Would you like to authenticate first?"]
 concept:(confirmationYes) ["I am really excited to meet you"]
 concept:(confirmationNo) ["I hope one day we can meet more closely"]
 concept:(faqLastBye) I think you are gone or very shy. 
 concept:(faqNotAuth) ["I am sorry It seems you couldn't authenticate. Since I don't know your customer number. I cannot send my magic link to you."]
 concept:(notUnderstood) I am sorry! I couldn't understand you. You can ask me non financial questions for instance ["how can I pay my bills" "How much is dollar" "what is credit rates"]
+concept:(faqMlError) ["I couldn't send your magic link. May be next time."]
 
 u:(e:Faq/RepliedWithML) $Faq/RepliedWithML ^gotoReactivate(faqAskML) 
 u:(e:Faq/ReplyAndContinue) $Faq/ReplyAndContinue ^gotoReactivate(faqStartNoSpeak)
 u:(e:Faq/MLSendSuccess) ~faqMLSent ^gotoReactivate(faqAskAgain)
-u:(e:Faq/Error) ^gotoReactivate(faqError)
+u:(e:Faq/Error) ~faqMlError ^gotoReactivate(faqError)
+u:(e:Faq/MlError) ^gotoReactivate(faqAskAgain)
 u:(e:Faq/MLNotAuth) ^gotoReactivate(faqNotAuth)
 u:(~exit) ^gotoReactivate(faqBye)
 
 proposal:%faqAskML ~faqAskML 
-    u1:(~yes $Faq/AuthNeed==0) ~faqMLSent $Faq/LinkSend=1 ^gotoReactivate(faqAskAgain)
-    u1:(~yes $Faq/AuthNeed==1) ~getConfirmation
+    u1:(~yes $Faq/AuthNeed==0) ~faqMLSending $Faq/LinkSend=1 
+    u1:(~yes $Faq/AuthNeed==1) ~getConfirmationFaq
         u2:(~yes) ~confirmationYes $Faq/OpenAuth=1 $Faq/MLStatus=1
         u2:(~no) ~confirmationNo ^gotoReactivate(faqAskAgain)
     u1:(~no) ~faqNextTime ^gotoReactivate(faqAskAgain)
@@ -75,7 +78,7 @@ proposal:%faqAskAgain ~faqAskAgain $FaqNoSpeak=0
     u1:(~exit) ^gotoReactivate(faqBye)
     
 proposal:%faqBye ~faqSurveyAndExit 
-    u1:(~yes) $Faq/SurveyStart=1
+    u1:(~yes) ~surveyYes $Faq/SurveyStart=1
     u1:(~no) ~surveyNo  $Faq/OpenMain=1
     u1:(e:Dialog/NoOneSpeak5) ~faqLastBye $Faq/OpenMain=1
     

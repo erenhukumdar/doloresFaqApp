@@ -7,7 +7,8 @@ import cgi
 import qi
 import os
 from customerquery import CustomerQuery
-from chirpsdk import chirpsdk
+from requests.auth import HTTPBasicAuth
+
 
 class FaqApp(object):
     subscriber_list = []
@@ -29,22 +30,7 @@ class FaqApp(object):
         self.create_signals()
         self.connect_to_preferences()
         self.logger.info("Initialized!")
-        sdk = chirpsdk.ChirpSDK('9NgAMLH11neQ0An3DwsOXBI1j', 'bUHBFEG2QWStKC6dB9VIrdvvvhM1PZrEmiDvtR47pg8YUER4ff')
-        chirp = sdk.create_chirp({
-            "customer_number" : "169858813",
-            "card_no" : "5520961800297586",
-            "citizen_id" : "24145667768",
-            "gsm_no" : "+16692159383",
-            "email" : "baranatmanoglu@gmail.com",
-            "segment" : "S",
-            "name" : "Baran",
-            "last_name" : "Atmanoglu"
-        })
-        print chirp.identifier
-        sdk.save_wav(chirp,filename='/home/nao/recordings/sample.wav',offline=False)
 
-        audio = self.session.service('ALAudioPlayer')
-        audio.playFile('/home/nao/recordings/sample.wav', 1.0, 0.0)
     #     Special memory event to under stand ML operation status
         try:
             self.is_magic_link = self.memory.getData('Faq/MLStatus')
@@ -101,6 +87,7 @@ class FaqApp(object):
             self.feedback_app_id = self.preferences.getValue('global_variables', 'feedback_app_id')
             self.auth_launcher_id = self.preferences.getValue('global_variables', 'auth_launcher_id')
             self.faq_app_id = self.preferences.getValue('global_variables', 'faq_app_id')
+            self.ml_url = self.preferences.getValue('faq', 'ml_url')
             self.link="http://www.isbank.com.tr/TR/kobi/dis-ticaret/dis-ticaret-urunleri/doviz-havalesi/Sayfalar/doviz-havalesi.aspx"
         except Exception, e:
             self.logger.info("failed to get preferences".format(e))
@@ -255,7 +242,7 @@ class FaqApp(object):
     @qi.bind(methodName="onMagicLinkWanted", paramsType=(), returnType=qi.Void)
     def on_magiclink_wanted(self, value):
         self.logger.info('magic link wanted!')
-#         for a while magic link service will be pushed only to db
+        link = 'http://www.isbank.com.tr/TR/kobi/dis-ticaret/dis-ticaret-urunleri/doviz-havalesi/Sayfalar/doviz-havalesi.aspx'
         try:
             customer_info = CustomerQuery()
             customer_info.fromjson(self.memory.getData("Global/CurrentCustomer"))
@@ -263,17 +250,30 @@ class FaqApp(object):
         except Exception, e:
             self.logger.error(e)
             customer_info = ''
-        if customer_info != '':
-            payload = json.dumps({'customerId': customer_info.customer_number, 'link': self.link})
-            self.logger.info("request time" + str(payload))
-            # response = requests.post(self.sm_url, data=payload, auth=(self.sm_basic_username, self.sm_basic_pass))
-            # json_response = response.json()
-            # if response.status_code != 200 or 'Errors' in json_response:
-            #     self.logger.error('magic link save request not completed or failed')
-            # else:
-            self.memory.raiseEvent('Faq/MLSendSuccess', 1)
-        else:
-            self.memory.raiseEvent('Faq/MLNotAuth', 1)
+        try:
+            payload = {
+                'customerId': customer_info.customer_number,
+                "link": link
+            }
+            headers = {
+                'Content-type': 'application/json',
+                'Accept': 'text/plain',
+            }
+            response = requests.post(self.ml_url, data=json.dumps(payload), headers=headers,
+                                     auth=HTTPBasicAuth(self.sm_basic_username, self.sm_basic_pass))
+            self.logger.info(response.text)
+            if response.status_code == 200:
+                self.logger.info("magic link has been sent")
+                self.memory.raiseEvent("Faq/MLSendSuccess", 1)
+
+                return True
+            else:
+                self.memory.raiseEvent("Faq/MlError", 1)
+                return False
+        except Exception, e:
+            self.logger.info('Error while requesting result: {}'.format(e))
+            self.memory.raiseEvent("Faq/Error", 1)
+            return False
 
     @qi.nobind
     def show_sm_link_on_tablet(self, link):
@@ -283,6 +283,7 @@ class FaqApp(object):
     @qi.nobind
     def on_survey_start(self, link):
         self.logger.info("survey has been started")
+        self.memory.removeData('Faq/MLStatus')
         autonomous_life = self.session.service('ALAutonomousLife')
         autonomous_life.switchFocus(self.feedback_app_id)
 

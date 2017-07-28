@@ -14,13 +14,10 @@
    <nature>interactive</nature>
    <permissions/>
   </behaviorContent>
-  <dialogContent topicName="Faq" typeVersion="1.0">
-   <topic path="Faq/Faq_enu.top" language="en_US"/>
-  </dialogContent>
  </contents>
  <services>
-  <service execStart="main.py" autorun="false" name="FaqApp"/>
-  <service execStart="ml.py" autorun="false" name="MLApp"/>
+  <service autorun="false" name="FaqApp" execStart="main.py"/>
+  <service autorun="false" name="MLApp" execStart="ml.py"/>
  </services>
  <executableFiles>
   <file path="main.py"/>
