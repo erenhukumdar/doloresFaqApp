@@ -17,7 +17,7 @@ concept:(faqRobotThink) ^rand["hmmm!" "ummmm!" "ooooo!"]
 concept:(faqNextTime) ^rand["OK may be next time" "Your choice, you know the best"] 
 concept:(faqStartProposal) Now it is time to ask me questions. During our conversation if you want to return main menu you can push exit button or you can say exit! I need to know your transaction briefly like examples on my tablet.
 concept:(faqUnderstood) ^rand["OK" "Understood" "of course" "you know the best"]
-concept:(faqAskAgain) Would you like to ask more question?
+concept:(faqAskAgain) Would you like to ask more questions?
 concept:(faqAskML) Would you like to me send quick access link to your online banking channels?
 concept:(faqMLSent) ^rand["Great" "wonderful" "awsome"] I have sent the link
 concept:(faqMLSending) ^rand["Hay hay captain" "you like speed"]

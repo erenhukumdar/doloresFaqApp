@@ -224,10 +224,15 @@ class FaqApp(object):
         self.logger.info('Transfer started..')
         try:
             self.logger.info('input value is =' + value)
-            value = self.escape_html(value)
+            # value = self.escape_html(value)
+
+            auth_headers = {
+                'Content-type': 'application/json',
+                'Accept': 'text/plain',
+            }
             payload = {"question": value}
-            self.logger.info('encoded' + value)
-            response = requests.get(self.sm_url, params=payload)
+            self.logger.info(self.sm_url)
+            response = requests.post(self.sm_url, data=json.dumps(payload), headers=auth_headers)
             json_response = response.json()
             if response.status_code != 200 or 'Errors' in json_response:
                 self.logger.error('magic link save request not completed or failed')

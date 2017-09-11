@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<package uuid="faqrobotapp-b60b0a" version="0.0.0">
+<package version="0.0.0" uuid="faqrobotapp-b60b0a">
  <names>
   <name lang="en_US">FAQApp</name>
  </names>
@@ -16,8 +16,8 @@
   </behaviorContent>
  </contents>
  <services>
-  <service autorun="false" name="FaqApp" execStart="main.py"/>
-  <service autorun="false" name="MLApp" execStart="ml.py"/>
+  <service execStart="main.py" autorun="false" name="FaqApp"/>
+  <service execStart="ml.py" autorun="false" name="MLApp"/>
  </services>
  <executableFiles>
   <file path="main.py"/>
